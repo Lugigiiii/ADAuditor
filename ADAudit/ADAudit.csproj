@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ADAudit</AssemblyName>
+    <RootNamespace>ADAudit</RootNamespace>
+    <StartupObject>ADAudit.Program</StartupObject>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Product>AD Audit Trail</Product>
+    <Description>Immutable Active Directory audit trail</Description>
+
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!-- No compression: assemblies are memory-mapped from the exe instead of being unpacked into private RAM -->
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredPGO>false</TieredPGO>
+    <DebugType>embedded</DebugType>
+    <!-- no local folder names (user name) inside the exe -->
+    <PathMap>$(MSBuildProjectDirectory)=/src</PathMap>
+    <Deterministic>true</Deterministic>
+
+    <!-- WPF0001: Fluent ThemeMode is flagged experimental; CA1416: Windows-only APIs (this app is Windows-only) -->
+    <NoWarn>$(NoWarn);WPF0001;CA1416;SYSLIB0014</NoWarn>
+
+    <!-- Build with -p:RequireAdmin=false only for local UI demos; release builds always require elevation. -->
+    <RequireAdmin Condition="'$(RequireAdmin)' == ''">true</RequireAdmin>
+    <ApplicationManifest Condition="'$(RequireAdmin)' == 'true'">app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Keep the resident service small: GC prefers compacting over growing the heap -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="7" />
+    <RuntimeHostConfigurationOption Include="System.GC.RetainVM" Value="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- System.Diagnostics.EventLog, System.DirectoryServices and ProtectedData ship with the Windows Desktop framework -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.*" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="10.*" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.*" />
+  </ItemGroup>
+
+</Project>
