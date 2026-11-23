@@ -22,7 +22,7 @@ static class SelfTest
             AuditEntry Mod(string sk, int min, string old, string nw, string attr = "member") => new()
             {
                 SourceKey = sk, TimeUtc = t.AddMinutes(min), Dc = "DC01", EventId = 5136, Category = Cat.Modify, Action = "test",
-                Actor = "CORP\\tester", TargetDn = "CN=FS_Admin,DC=corp,DC=local", TargetGuid = g, Attribute = attr, OldValue = old, NewValue = nw,
+                Actor = "CORP\\tester", TargetDn = "CN=Temp_Admins,DC=corp,DC=local", TargetGuid = g, Attribute = attr, OldValue = old, NewValue = nw,
             };
 
             using (var store = new AuditStore(path, key))
@@ -72,13 +72,13 @@ static class SelfTest
                 var quickRemove = store.Append(new[] { Mod("DC01:42:42", 4, "CN=Old,DC=corp,DC=local", "") }, null)[0];
                 Check("removal minutes later is linked as revert", store.Get(quickRemove.Id)!.RevertsId == reAdd.Id);
 
-                // FS_Admin-like group (automatic removal): re-adding after a removal is NOT an undo; the removal is
+                // temporary-membership group (automatic removal): re-adding after a removal is NOT an undo; the removal is
                 store.TemporaryGroups = () => new[] { g };
                 var tRem = store.Append(new[] { Mod("DC01:50:50", 5, "CN=Maint,DC=corp,DC=local", "") }, null)[0];
                 var tAdd = store.Append(new[] { Mod("DC01:51:51", 6, "", "CN=Maint,DC=corp,DC=local") }, null)[0];
-                Check("FS_Admin: re-addition is not shown as undoing the earlier removal", store.Get(tAdd.Id)!.RevertsId == null);
+                Check("temporary group: re-addition is not shown as undoing the earlier removal", store.Get(tAdd.Id)!.RevertsId == null);
                 var tRem2 = store.Append(new[] { Mod("DC01:52:52", 66, "CN=Maint,DC=corp,DC=local", "") }, null)[0];
-                Check("FS_Admin: the removal one hour later undoes the addition", store.Get(tRem2.Id)!.RevertsId == tAdd.Id);
+                Check("temporary group: the removal one hour later undoes the addition", store.Get(tRem2.Id)!.RevertsId == tAdd.Id);
                 store.TemporaryGroups = () => Array.Empty<string>();
 
                 // acknowledged memberships

@@ -79,7 +79,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ───────── Banners: errors / initialization / FS_Admin guard ───────── -->
+            <!-- ───────── Banners: errors / initialization / group alerts ───────── -->
             <StackPanel Grid.Row="1" Margin="20,4,20,0">
                 <Border x:Name="ErrorBanner" Visibility="Collapsed" CornerRadius="10" Padding="14,10" Margin="0,0,0,6"
                         Background="#66F85149" BorderBrush="#AAF85149" BorderThickness="1">

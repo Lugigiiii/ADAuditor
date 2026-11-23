@@ -40,7 +40,7 @@ public sealed class DemoSource : IAuditSource
         string[] dcs = { "DC01", "DC02" };
         long id = 1;
         var guids = users.ToDictionary(u => u, _ => Guid.NewGuid().ToString());
-        var ggroups = groups.Append("FS_Admin").ToDictionary(g => g, _ => Guid.NewGuid().ToString());
+        var ggroups = groups.Append("Temp_Admins").ToDictionary(g => g, _ => Guid.NewGuid().ToString());
 
         string UserDn(string u) => $"CN={u},OU=Staff,OU=Corp,DC=corp,DC=local";
         string GroupDn(string g) => $"CN={g},OU=Groups,OU=Corp,DC=corp,DC=local";
@@ -159,24 +159,24 @@ public sealed class DemoSource : IAuditSource
             }
         }
 
-        // FS_Admin: one already removed by the guard, one pending
+        // Temp_Admins: one already removed by the guard, one pending
         var a1 = New(now.AddDays(-3), Cat.Modify, "Member added to group", "CORP\\adm.fischer", 5136);
-        a1.TargetDn = GroupDn("FS_Admin"); a1.TargetGuid = ggroups["FS_Admin"]; a1.TargetClass = "group"; a1.Attribute = "member"; a1.NewValue = UserDn("Lena Hoffmann");
-        var g1 = New(a1.TimeUtc.AddSeconds(12), Cat.Guard, "ALERT: member added to FS_Admin", "ADAudit service (DC01)", 0);
+        a1.TargetDn = GroupDn("Temp_Admins"); a1.TargetGuid = ggroups["Temp_Admins"]; a1.TargetClass = "group"; a1.Attribute = "member"; a1.NewValue = UserDn("Lena Hoffmann");
+        var g1 = New(a1.TimeUtc.AddSeconds(12), Cat.Guard, "ALERT: member added to Temp_Admins", "ADAudit service (DC01)", 0);
         g1.TargetDn = a1.TargetDn; g1.NewValue = a1.NewValue; g1.SourceHost = "DC01 (server itself)"; g1.SourceIp = ""; g1.Dc = "DC01";
         var r1 = New(a1.TimeUtc.AddMinutes(60).AddSeconds(8), Cat.Modify, "Member removed from group", "SYSTEM (DC01)", 5136);
         r1.TargetDn = a1.TargetDn; r1.TargetGuid = a1.TargetGuid; r1.TargetClass = "group"; r1.Attribute = "member"; r1.OldValue = a1.NewValue; r1.SourceHost = "DC01 (server itself)"; r1.Dc = "DC01";
         _all.AddRange(new[] { a1, g1, r1 });
         Link(a1, r1, "membership reverted");
-        _guard.Add(new GuardItem { Id = 1, AuditId = a1.Id, GroupName = "FS_Admin", MemberDn = a1.NewValue, AddedBy = a1.Actor, AddedUtc = a1.TimeUtc, DueUtc = a1.TimeUtc.AddHours(1), Status = GuardStatus.Removed, StatusUtc = r1.TimeUtc });
+        _guard.Add(new GuardItem { Id = 1, AuditId = a1.Id, GroupName = "Temp_Admins", MemberDn = a1.NewValue, AddedBy = a1.Actor, AddedUtc = a1.TimeUtc, DueUtc = a1.TimeUtc.AddHours(1), Status = GuardStatus.Removed, StatusUtc = r1.TimeUtc });
 
         var a2 = New(now.AddMinutes(-23), Cat.Modify, "Member added to group", "CORP\\adm.novak", 5136);
-        a2.TargetDn = GroupDn("FS_Admin"); a2.TargetGuid = ggroups["FS_Admin"]; a2.TargetClass = "group"; a2.Attribute = "member"; a2.NewValue = UserDn("Tom Wagner"); a2.Dc = "DC02";
-        var g2 = New(a2.TimeUtc.AddSeconds(9), Cat.Guard, "ALERT: member added to FS_Admin", "ADAudit service (DC01)", 0);
+        a2.TargetDn = GroupDn("Temp_Admins"); a2.TargetGuid = ggroups["Temp_Admins"]; a2.TargetClass = "group"; a2.Attribute = "member"; a2.NewValue = UserDn("Tom Wagner"); a2.Dc = "DC02";
+        var g2 = New(a2.TimeUtc.AddSeconds(9), Cat.Guard, "ALERT: member added to Temp_Admins", "ADAudit service (DC01)", 0);
         g2.TargetDn = a2.TargetDn; g2.NewValue = a2.NewValue; g2.SourceHost = "DC01 (server itself)"; g2.SourceIp = ""; g2.Dc = "DC01";
-        g2.Details = $"Trigger entry #{a2.Id}\nTom Wagner was added to FS_Admin by CORP\\adm.novak. The membership will be removed automatically.";
+        g2.Details = $"Trigger entry #{a2.Id}\nTom Wagner was added to Temp_Admins by CORP\\adm.novak. The membership will be removed automatically.";
         _all.AddRange(new[] { a2, g2 });
-        _guard.Add(new GuardItem { Id = 2, AuditId = a2.Id, GroupName = "FS_Admin", MemberDn = a2.NewValue, AddedBy = a2.Actor, AddedUtc = a2.TimeUtc, DueUtc = a2.TimeUtc.AddHours(1), Status = GuardStatus.Pending });
+        _guard.Add(new GuardItem { Id = 2, AuditId = a2.Id, GroupName = "Temp_Admins", MemberDn = a2.NewValue, AddedBy = a2.Actor, AddedUtc = a2.TimeUtc, DueUtc = a2.TimeUtc.AddHours(1), Status = GuardStatus.Pending });
 
         var a3 = New(now.AddHours(-5), Cat.Modify, "Member added to group", "CORP\\adm.weber", 5136);
         a3.TargetDn = "CN=Domain Admins,CN=Users,DC=corp,DC=local"; a3.TargetGuid = Guid.NewGuid().ToString(); a3.TargetClass = "group"; a3.Attribute = "member"; a3.NewValue = UserDn("Jonas Wolf");
@@ -275,7 +275,7 @@ public sealed class DemoSource : IAuditSource
     {
         Rules = new()
         {
-            new GuardRule { Name = "FS_Admin", Alert = true, AutoRemove = true, RemoveAfterMinutes = 60 },
+            new GuardRule { Name = "Temp_Admins", Alert = true, AutoRemove = true, RemoveAfterMinutes = 60 },
             new GuardRule { Name = "Domain Admins", DomainRid = 512, Alert = true, AutoRemove = false, RequireAck = true },
         },
     };

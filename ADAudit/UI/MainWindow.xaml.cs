@@ -783,7 +783,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Draws a slim bracket in the timeline gutter between each change and the change that reverted it
-    /// (e.g. "member added to FS_Admin" ⟷ "member removed"). Pairs get their own lane so they never overlap;
+    /// (e.g. "member added" ⟷ "member removed"). Pairs get their own lane so they never overlap;
     /// if one end is scrolled out of view the bracket runs to the edge.
     /// </summary>
     void DrawLinks()

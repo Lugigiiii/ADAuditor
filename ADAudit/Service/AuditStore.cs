@@ -257,7 +257,7 @@ sealed class AuditStore : IDisposable
         }
     }
 
-    /// <summary>GUIDs of groups with automatic removal (e.g. FS_Admin), supplied by the group guard.</summary>
+    /// <summary>GUIDs of groups with automatic removal (groups that should stay empty, e.g. a maintenance admin group), supplied by the group guard.</summary>
     public Func<IReadOnlyCollection<string>> TemporaryGroups { get; set; } = () => Array.Empty<string>();
 
     /// <summary>SQL: the reverting entry <paramref name="x"/> is an addition to a temporary group → not a revert.</summary>

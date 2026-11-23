@@ -73,7 +73,7 @@ static class Installer
                 Run("sc.exe", $"create {Proto.ServiceName} binPath= \"{bin}\" start= delayed-auto obj= LocalSystem DisplayName= \"AD Audit Trail\"", true);
             else
                 Run("sc.exe", $"config {Proto.ServiceName} binPath= \"{bin}\" start= delayed-auto obj= LocalSystem", true);
-            Run("sc.exe", $"description {Proto.ServiceName} \"Immutable Active Directory audit trail and FS_Admin guard\"");
+            Run("sc.exe", $"description {Proto.ServiceName} \"Immutable Active Directory audit trail and group guard\"");
             Run("sc.exe", $"failure {Proto.ServiceName} reset= 86400 actions= restart/5000/restart/5000/restart/30000", true);
             Run("sc.exe", $"failureflag {Proto.ServiceName} 1");
         });

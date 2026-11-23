@@ -10,7 +10,7 @@ namespace ADAudit.Service;
 
 /// <summary>
 /// Watches the configured groups (Settings → Group alerts). Per group: alert on every new member and/or
-/// remove the member again after N minutes. Defaults: FS_Admin = alert + remove after 60 min,
+/// remove the member again after N minutes (e.g. a maintenance admin group that should stay empty). Default:
 /// Domain Admins (RID 512, works in every AD language) = alert only, never removed.
 /// Removal runs via LDAP on the local DC as SYSTEM.
 /// </summary>
@@ -276,7 +276,7 @@ sealed class GroupGuard
 
     volatile string[] _temporary = Array.Empty<string>();
 
-    /// <summary>Groups with automatic removal (should stay empty, e.g. FS_Admin).</summary>
+    /// <summary>Groups with automatic removal (should stay empty, e.g. a maintenance admin group).</summary>
     public IReadOnlyCollection<string> TemporaryGroupGuids()
     {
         if (Monitor.TryEnter(_byGuid))

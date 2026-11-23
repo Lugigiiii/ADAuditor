@@ -146,7 +146,7 @@ public sealed class Engine
     void Loop()
     {
         BeginBackgroundMode();
-        _guard.Reload(); // resolve watched groups once at start (FS_Admin GUID etc.)
+        _guard.Reload(); // resolve watched groups once at start (GUIDs of the configured groups)
         while (!_cts.IsCancellationRequested)
         {
             bool more = false;
@@ -154,7 +154,7 @@ public sealed class Engine
             catch (Exception ex) { Log.Error("Collector cycle failed", ex); }
 
             if (!more && _phase == "Backfill") FinishBackfill();
-            // the AD history import runs on its own thread: live collection and the FS_Admin timer never wait for it
+            // the AD history import runs on its own thread: live collection and the removal timers never wait for it
             if (_phase == "Reconstruct" && _recon is not { IsAlive: true } && _store.GetMeta("init_done") == null) StartReconstruction(null);
             else if (_phase == "Live" && !more) ReconstructLateDcs();
 

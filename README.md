@@ -4,7 +4,7 @@ A single self-contained `ADAudit.exe` for Active Directory. The same exe does th
 
 | Role | Where | Runs as | What it does |
 |---|---|---|---|
-| **Service** (`--service`, Windows service "AD Audit Trail") | **one DC** | **LocalSystem** | Collects the Security log of **all** DCs and imports past events. Writes the append-only, hash-chained trail, links reverts, and enforces the FS_Admin rule. |
+| **Service** (`--service`, Windows service "AD Audit Trail") | **one DC** | **LocalSystem** | Collects the Security log of **all** DCs and imports past events. Writes the append-only, hash-chained trail, links reverts, and enforces the group alert / auto-removal rules. |
 | **Viewer on the DC** (`ADAudit.exe`) | the DC with the service | Administrator (UAC) | Dashboard and audit log, read through a local pipe. |
 | **Viewer on admin PCs** (`ADAudit.exe`, installed with `--install-viewer`) | any domain-joined admin PC | Administrator (UAC) | Same UI with **no local database**. Reads the trail live from the DC's service over the network, using your account or Domain Admin credentials you enter. |
 
@@ -45,7 +45,7 @@ Sources:
 - Security events from both DCs: 5136–5141 (AD object changes), 4723/4724 (password), 4740/4767 (lockout), 4719 (audit policy), 4794 (DSRM), 1102 (**log cleared**).
 - The service's own entries:
   - service start/stop
-  - FS_Admin alerts and removals
+  - group alerts, acknowledgments and removals
   - lost records
   - **every viewer session**: who opened the trail, and from which computer
 
@@ -81,14 +81,16 @@ From then on everything is recorded live with full detail. Set `"ReconstructHist
 
 Open the **gear icon** in the viewer's navigation rail. Settings are stored by the service on the DC and take effect immediately. **Every change is itself recorded in the audit trail** with who, from where, and the old → new values.
 
-Each rule has a group, *Alert* on/off, and *Remove new member* on/off with a time in minutes. Defaults:
+Each rule has a group, *Alert* on/off, *Acknowledge* on/off, and *Remove new member* on/off with a time in minutes.
 
-| Group | Alert | Removed? |
-|---|---|---|
-| **FS_Admin** | yes | yes, after 60 min |
-| **Domain Admins** | yes | **no, never removed** |
+| Group | Alert | Acknowledge | Removed? |
+|---|---|---|---|
+| **Domain Admins** (default) | yes | required | **no, never removed** |
+| *your maintenance group* (example, add it yourself) | yes | off | yes, after e.g. 60 min |
 
-The Domain Admins rule matches by RID 512, so it works with localized names such as "Domänen-Admins". Existing installations get this rule added automatically.
+The Domain Admins rule matches by RID 512, so it works with localized names such as "Domänen-Admins".
+
+A typical extra rule is a **temporary admin group** that should normally be empty: people are added for maintenance work and removed automatically after an hour. For such groups (any group with *Remove new member* on), an addition is always shown as a new event, and only the removal counts as its revert.
 
 When a member is added to a group with a rule:
 
@@ -131,7 +133,7 @@ Additions found in historic data from before the install only ever alert.
 - **Resize columns** by dragging the header edges. The handle lights up on hover. Widths are remembered per user.
 - **Selected row:** a teal highlight with a ring around its timeline dot.
 - **Timeline on the left:** a coloured trail with a dot per event, in the category colour. Hollow dots are reconstructed entries.
-- **Revert connectors:** a slim amber bracket connects a change with the change that reverted it (e.g. *member added to FS_Admin* → *member removed*). The arrow points at the revert.
+- **Revert connectors:** a slim amber bracket connects a change with the change that reverted it (e.g. *member added to a group* → *member removed*). The arrow points at the revert.
 
 ## Immutability – what is guaranteed, what is not
 
@@ -239,7 +241,10 @@ Administrators can edit this file. Restart the service afterwards. The file's SH
   "AllowRemoteViewers": true,
   "ViewerGroups": [ "CORP\\AD-Audit-Readers" ],
   "ReconstructHistory": true,
-  "GuardedGroups": [ { "Name": "FS_Admin", "MaxMembershipMinutes": 60 } ],
+  "GuardedGroups": [
+    { "Name": "Domain Admins", "DomainRid": 512, "Alert": true, "RequireAck": true, "AutoRemove": false },
+    { "Name": "Maint_Admins", "Alert": true, "RequireAck": false, "AutoRemove": true, "MaxMembershipMinutes": 60 }
+  ],
   "EnforceGuardOnBackfill": false,
   "PopupAlerts": true,
   "Smtp": { "Host": "smtp.corp.local", "Port": 25, "UseSsl": false, "From": "adaudit@corp.local", "To": [ "it-security@corp.local" ] },

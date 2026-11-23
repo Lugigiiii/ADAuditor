@@ -11,7 +11,7 @@ namespace ADAudit.Service;
 public sealed class GuardedGroup
 {
     /// <summary>sAMAccountName or CN of the group (display name when DomainRid is set).</summary>
-    public string Name { get; set; } = "FS_Admin";
+    public string Name { get; set; } = "";
     /// <summary>Well-known group by RID instead of name (512 = Domain Admins in every AD language).</summary>
     public int? DomainRid { get; set; }
     /// <summary>Alert (event log, pop-up, e-mail, viewer banner) when a member is added.</summary>
@@ -85,7 +85,6 @@ public sealed class Config
 
     static List<GuardedGroup> DefaultGroups() => new()
     {
-        new GuardedGroup { Name = "FS_Admin", Alert = true, AutoRemove = true, MaxMembershipMinutes = 60 },
         new GuardedGroup { Name = "Domain Admins", DomainRid = 512, Alert = true, AutoRemove = false, RequireAck = true },
     };
 
