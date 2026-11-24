@@ -25,6 +25,12 @@ public static class Noise
     {
         if (e.IsNoOp) return true;
         if (e.TargetClass.Equals("dnsNode", StringComparison.OrdinalIgnoreCase) && IsMachineActor(e)) return true;
+        // GPO version bumps written by SYSTEM / a computer account (e.g. RMM agents re-applying their policy);
+        // edits by a person are kept, reconstructed entries (actor unknown) too
+        if (e.Category == Cat.Modify && e.Attribute.Equals("versionNumber", StringComparison.OrdinalIgnoreCase)
+            && e.TargetClass.Equals("groupPolicyContainer", StringComparison.OrdinalIgnoreCase) && !e.IsReconstructed
+            && (e.Actor.EndsWith("(computer)", StringComparison.OrdinalIgnoreCase) || e.Actor.StartsWith("SYSTEM (", StringComparison.OrdinalIgnoreCase)))
+            return true;
         if (e.Category != Cat.Modify || !SelfSet.Contains(e.Attribute)) return false;
         // reconstructed: actor unknown, but these attributes on computer objects are maintained by the computer itself
         if (e.IsReconstructed && e.TargetClass.Equals("computer", StringComparison.OrdinalIgnoreCase)
@@ -44,6 +50,8 @@ public static class Noise
         NOT (
           ({a}.category='Modify' AND {a}.old_value<>'' AND {a}.old_value={a}.new_value)
           OR ({a}.target_class='dnsNode' AND ({a}.actor LIKE '%(computer)' OR {a}.actor LIKE 'SYSTEM (%' OR {a}.event_id=-1))
+          OR ({a}.category='Modify' AND {a}.attribute='versionNumber' AND {a}.target_class='groupPolicyContainer' AND {a}.event_id<>-1
+              AND ({a}.actor LIKE '%(computer)' OR {a}.actor LIKE 'SYSTEM (%'))
           OR ({a}.category='Modify' AND {a}.attribute IN ({string.Join(",", SelfMaintainedAttributes.Select(s => $"'{s}'"))}) AND (
                ({a}.event_id=-1 AND {a}.target_class='computer' AND {a}.attribute<>'description')
             OR ({a}.actor LIKE '%$ (computer)' AND instr({a}.target_dn, ',') > 4

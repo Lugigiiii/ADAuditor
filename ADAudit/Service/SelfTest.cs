@@ -88,6 +88,16 @@ static class SelfTest
                 Check("acknowledgment is per group", store.FindAck("g-other", "S-1-5-21-1-2-3-1500", "x") == null);
                 store.RevokeAck(ackId, "CORP\\boss");
                 Check("revoked acknowledgment no longer applies", store.FindAck("g-da", "S-1-5-21-1-2-3-1500", "x") == null && store.Acks(true).Count == 0);
+                var gpo = new AuditEntry { Category = Cat.Modify, EventId = 5136, Actor = "SYSTEM (CORP\\DC01$)", TargetClass = "groupPolicyContainer",
+                    TargetDn = "CN={31B2F340-016D-11D2-945F-00C04FB984F9},CN=Policies,CN=System,DC=corp,DC=local", Attribute = "versionNumber", OldValue = "36", NewValue = "37" };
+                Check("GPO version bump by SYSTEM is noise", Noise.IsNoise(gpo));
+                gpo.Actor = "CORP\\admin";
+                Check("GPO edit by a person is kept", !Noise.IsNoise(gpo));
+                store.Append(new[] { new AuditEntry { Category = Cat.Modify, EventId = 5136, Actor = "SYSTEM (CORP\\DC01$)", TargetClass = "groupPolicyContainer",
+                    TargetDn = "CN={AAAA},CN=Policies,CN=System,DC=corp,DC=local", Attribute = "versionNumber", OldValue = "40", NewValue = "41",
+                    TimeUtc = t, Dc = "DC01", SourceKey = "DC01:gpo:1", Action = "Group Policy edited" } }, null);
+                Check("stored GPO version bump by SYSTEM hidden from the log", store.Query(new QueryRequest { Text = "AAAA" }).TotalMatches == 0
+                    && store.Query(new QueryRequest { Text = "AAAA", IncludeNoise = true }).TotalMatches == 1);
                 Check("delegation self-write is kept", !Noise.IsNoise(new AuditEntry { Category = Cat.Modify, EventId = 5136, Actor = spn.Actor,
                     TargetDn = spn.TargetDn, TargetClass = "computer", Attribute = "msDS-AllowedToActOnBehalfOfOtherIdentity", NewValue = "x" }));            }
 
